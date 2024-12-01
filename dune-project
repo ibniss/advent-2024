@@ -1,11 +1,11 @@
 (lang dune 3.16)
 
-(name advent_2024)
+(name aoc)
 
 (generate_opam_files true)
 
 (package
- (name advent_2024)
+ (name aoc)
  (depends ocaml dune)
  )
 

@@ -1,0 +1,8 @@
+profile = janestreet
+
+margin = 100
+doc-comments-padding = 100
+exp-grouping = preserve
+sequence-blank-line = preserve-one
+parse-docstrings = true
+wrap-comments = true

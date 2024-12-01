@@ -1,2 +1,4 @@
 (library
- (name aoc))
+ (name aoc)
+ (libraries core)
+ )

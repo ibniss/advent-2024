@@ -16,6 +16,7 @@
  (depends
    ocaml
    dune
+   core
    fmt
    ppx_deriving))
 

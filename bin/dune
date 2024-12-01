@@ -1,4 +1,6 @@
-(executable
- (public_name aoc)
- (name main)
- (libraries aoc))
+(executables
+ (public_names day1)
+ (names day1)
+ (libraries aoc fmt core)
+ (preprocess
+   (pps ppx_deriving.show ppx_deriving.ord ppx_deriving.eq)))

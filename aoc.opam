@@ -3,10 +3,11 @@ opam-version: "2.0"
 synopsis: "Advent of Code 2024 solutions"
 maintainer: ["Krzysztof Bielikowicz"]
 authors: ["Krzysztof Bielikowicz"]
-license: "LICENSE"
+license: "MIT"
 depends: [
   "ocaml"
   "dune" {>= "3.16"}
+  "core"
   "fmt"
   "ppx_deriving"
   "odoc" {with-doc}

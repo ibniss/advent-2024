@@ -4,9 +4,19 @@
 
 (generate_opam_files true)
 
+(authors "Krzysztof Bielikowicz")
+
+(maintainers "Krzysztof Bielikowicz")
+
+(license MIT)
+
 (package
  (name aoc)
- (depends ocaml dune)
- )
+ (synopsis "Advent of Code 2024 solutions")
+ (depends
+   ocaml
+   dune
+   fmt
+   ppx_deriving))
 
 ; See the complete stanza docs at https://dune.readthedocs.io/en/stable/reference/dune-project/index.html

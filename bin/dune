@@ -1,6 +1,7 @@
 (executables
  (public_names day1 day2)
  (names day1 day2)
- (libraries aoc fmt core)
+ (libraries aoc fmt core stdio)
  (preprocess
-   (pps ppx_deriving.show ppx_deriving.ord ppx_deriving.eq)))
+   (pps ppx_deriving.show ppx_deriving.ord ppx_deriving.eq ppx_inline_test ppx_expect))
+ )

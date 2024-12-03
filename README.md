@@ -31,7 +31,19 @@ opam install ocaml-lsp-server
 To run:
 
 ```bash
-dune exec aoc DAY
+dune exec aoc -- DAY
+```
+
+E.g. only Day 3 Part 1:
+
+```bash
+dune exec aoc -- 3 -1
+```
+
+See help:
+
+```bash
+dune exec aoc -- -help
 ```
 
 Small test inputs are inlined into the day files. Real inputs should be placed in `./inputs`, e.g.

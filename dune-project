@@ -17,6 +17,7 @@
    ocaml
    dune
    core
+   core_unix
    fmt
    ppx_deriving))
 

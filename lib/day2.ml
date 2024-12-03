@@ -1,5 +1,4 @@
 open Core
-open Stdio
 
 module Report = struct
   (** Represents a sequence of reactor levels *)
@@ -13,7 +12,6 @@ module Report = struct
   (** Parse a raw [line] into a report *)
   let parse_raw line : t =
       line |> String.split ~on:' ' |> List.map ~f:int_of_string
-
 
   (** Checks if [report] is safe *)
   let is_safe (report : t) =
@@ -73,11 +71,44 @@ module Report = struct
   ;;
 end
 
-let () =
-  let lines = Stdio.In_channel.read_lines "./inputs/day2_prod.txt" in
-  let reports = List.map lines ~f:Report.parse_raw in
-  print_endline "Safe reports:";
-  List.count reports ~f:Report.is_safe |> string_of_int |> print_endline;
-  print_endline "Safe reports with Problem Dampening:";
-  List.count reports ~f:Report.is_safe_dampened |> string_of_int |> print_endline
+module M = struct
+  (* Type to parse the input into *)
+  type t = Report.t list
+
+  (* Parse the input to type t, invoked for both parts *)
+  let parse inputs =
+      String.split_lines inputs |> List.map ~f:Report.parse_raw
+
+  (* Run part 1 with parsed inputs *)
+  let part1 reports =
+    List.count reports ~f:Report.is_safe |> string_of_int |> print_endline
+
+  (* Run part 2 with parsed inputs *)
+  let part2 reports =
+    List.count reports ~f:Report.is_safe_dampened |> string_of_int |> print_endline
+end
+
+include M
+include Day.Make (M)
+
+(* Example input *)
+let example = "\
+7 6 4 2 1
+1 2 7 8 9
+9 7 6 2 1
+1 3 2 4 5
+8 6 4 4 1
+1 3 6 7 9\
+"
+
+
+(* Expect tests for example input *)
+let%expect_test "part 1" =
+  run example ~only_part1:true;
+  [%expect {| 2 |}]
+;;
+
+let%expect_test "part 2" =
+  run example ~only_part2:true;
+  [%expect {| 4 |}]
 ;;

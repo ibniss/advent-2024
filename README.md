@@ -4,6 +4,8 @@ My solutions to Advent of Code 2024, learning Ocaml.
 
 See https://adventofcode.com/2024
 
+Repo setup inspired by https://github.com/fangyi-zhou/advent-of-code-ocaml-starter
+
 ## Setup
 
 Install dependencies
@@ -26,18 +28,18 @@ opam install ocaml-lsp-server
 
 # Running solutions
 
-To run e.g. day 1:
+To run:
 
 ```bash
-dune exec ./bin/day1.exe
+dune exec aoc DAY
 ```
 
-Small test inputs are checked into the repo. Real inputs should be placed in `./inputs`, e.g.
+Small test inputs are inlined into the day files. Real inputs should be placed in `./inputs`, e.g.
 
 ```
 - inputs/
-  - day1.txt
-  - day1_prod.txt
+  - 1.txt
+  - 2.txt
 ```
 
-`*_prod.txt` files are gitignored since AoC asks participants to not share puzzle inputs
+`*.txt` files are gitignored since AoC asks participants to not share puzzle inputs

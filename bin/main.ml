@@ -11,7 +11,6 @@ let load_input day =
   | `Unknown -> Error (Printf.sprintf "Cannot determine if %s exists" input_file)
 ;;
 
-(** Map of day number -> implementation module *)
 let days =
   String.Map.of_alist_exn
     [ "1", (module Day1 : Day.S)
@@ -29,7 +28,6 @@ let get_day_module day =
   | None -> Error (Printf.sprintf "Day %s not implemented" day)
 ;;
 
-(** Define the command *)
 let command =
   Command.basic
     ~summary:"Run Advent of Code solutions"

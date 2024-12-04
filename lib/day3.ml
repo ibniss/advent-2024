@@ -51,7 +51,7 @@ module Parser = struct
   type t = int * int
 
   (** parse [tokens] into a list of found Mul operations *)
-  let parse ?(enable_conditionals = false) tokens =
+  let parse ?(enable_conditionals = false) (tokens : Lexer.t list) =
     let open Lexer in
     let rec aux acc mul_enabled = function
       | Mul :: LParen :: Num x :: Comma :: Num y :: RParen :: rest ->
@@ -63,15 +63,19 @@ module Parser = struct
     in
     aux [] true tokens
   ;;
+end
 
-  (** Evaluate a Mul([x],[y]) *)
+module Evaluator = struct
   let eval (x, y) = x * y
 
-  (** Execute and sum all Mul(x,y) operations found in a list of [tokens].
+  (** Execute and sum all Mul(x,y) operations.
       Optionally considers conditionals when [enable_conditionals] is true *)
-  let execute ?(enable_conditionals = false) tokens =
-    tokens |> parse ~enable_conditionals |> List.map ~f:eval |> List.fold ~init:0 ~f:( + )
+  let execute (operations : Parser.t list) =
+    operations |> List.map ~f:eval |> List.fold ~init:0 ~f:( + )
   ;;
+
+  (** Run Evaluator.execute and print the result *)
+  let run (operations : Parser.t list) = execute operations |> string_of_int |> print_endline
 end
 
 module M = struct
@@ -79,15 +83,13 @@ module M = struct
   type t = Lexer.t list
 
   (* Parse the input to type t, invoked for both parts *)
-  let parse inputs = Lexer.tokenize (String.to_list inputs)
+  let parse inputs = Lexer.tokenize @@ String.to_list inputs
 
   (* Run part 1 with parsed inputs *)
-  let part1 tokens = tokens |> Parser.execute |> string_of_int |> print_endline
+  let part1 tokens = tokens |> Parser.parse |> Evaluator.run
 
   (* Run part 2 with parsed inputs *)
-  let part2 tokens =
-    tokens |> Parser.execute ~enable_conditionals:true |> string_of_int |> print_endline
-  ;;
+  let part2 tokens = tokens |> Parser.parse ~enable_conditionals:true |> Evaluator.run
 end
 
 include M

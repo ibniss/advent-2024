@@ -73,18 +73,20 @@ module M = struct
 
   (* Run part 1 with parsed inputs *)
   let part1 tokens =
-    let sum = Parser.parse tokens |> List.map ~f:Parser.eval |> List.fold ~init:0 ~f:( + ) in
-    print_endline @@ string_of_int sum
+    Parser.parse tokens
+    |> List.map ~f:Parser.eval
+    |> List.fold ~init:0 ~f:( + )
+    |> string_of_int
+    |> print_endline
   ;;
 
   (* Run part 2 with parsed inputs *)
   let part2 tokens =
-    let sum =
-      Parser.parse tokens ~enable_conditionals:true
-      |> List.map ~f:Parser.eval
-      |> List.fold ~init:0 ~f:( + )
-    in
-    print_endline @@ string_of_int sum
+    Parser.parse tokens ~enable_conditionals:true
+    |> List.map ~f:Parser.eval
+    |> List.fold ~init:0 ~f:( + )
+    |> string_of_int
+    |> print_endline
   ;;
 end
 

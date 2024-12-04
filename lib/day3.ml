@@ -7,6 +7,8 @@ module Lexer = struct
     | LParen
     | RParen
     | Comma
+    | Do
+    | Dont
     | Num of int
     | Invalid
   [@@deriving show]
@@ -16,6 +18,8 @@ module Lexer = struct
     let ( << ) = Char.( <= ) in
     let rec aux acc = function
       | 'm' :: 'u' :: 'l' :: rest -> aux (Mul :: acc) rest
+      | 'd' :: 'o' :: '(' :: ')' :: rest -> aux (Do :: acc) rest
+      | 'd' :: 'o' :: 'n' :: '\'' :: 't' :: '(' :: ')' :: rest -> aux (Dont :: acc) rest
       | '(' :: rest -> aux (LParen :: acc) rest
       | ')' :: rest -> aux (RParen :: acc) rest
       | ',' :: rest -> aux (Comma :: acc) rest
@@ -45,10 +49,18 @@ module Parser = struct
   type t = int * int
 
   (** parse [tokens] into a list of found Mul operations *)
-  let parse tokens =
+  let parse ?(enable_conditionals = false) tokens =
     let open Lexer in
+    let mul_enabled = ref true in
     let rec aux acc = function
-      | Mul :: LParen :: Num x :: Comma :: Num y :: RParen :: rest -> aux ((x, y) :: acc) rest
+      | Mul :: LParen :: Num x :: Comma :: Num y :: RParen :: rest ->
+        if !mul_enabled then aux ((x, y) :: acc) rest else aux acc rest
+      | Do :: rest when enable_conditionals ->
+        mul_enabled := true;
+        aux acc rest
+      | Dont :: rest when enable_conditionals ->
+        mul_enabled := false;
+        aux acc rest
       | _ :: rest -> aux acc rest
       | [] -> acc
     in
@@ -73,7 +85,14 @@ module M = struct
   ;;
 
   (* Run part 2 with parsed inputs *)
-  let part2 _ = ()
+  let part2 tokens =
+    let sum =
+      Parser.parse tokens ~enable_conditionals:true
+      |> List.map ~f:Parser.eval
+      |> List.fold ~init:0 ~f:( + )
+    in
+    print_endline @@ string_of_int sum
+  ;;
 end
 
 include M
@@ -103,3 +122,11 @@ let%expect_test "example_invalid" =
   run example_invalid ~only_part1:true;
   [%expect {| 0 |}]
 ;;
+
+let example_two = "xmul(2,4)&mul[3,7]!^don't()_mul(5,5)+mul(32,64](mul(11,8)undo()?mul(8,5))"
+
+let%expect_test "part 2" =
+  run example_two ~only_part2:true;
+  [%expect {| 48 |}]
+;;
+

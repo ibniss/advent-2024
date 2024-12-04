@@ -13,6 +13,18 @@ module Lexer = struct
     | Invalid
   [@@deriving show]
 
+  (** Given a [first_digit] followed by [rest] chars, match a 1-3 digit number. Returns a tuple of (number, remaining chars) *)
+  let match_number first_digit rest =
+    let rec aux num_acc = function
+      | d :: rest when Char.is_digit d && List.length num_acc < 3 -> aux (d :: num_acc) rest
+      | remaining ->
+        let num = num_acc |> List.rev |> String.of_list |> int_of_string in
+        num, remaining
+    in
+    aux [ first_digit ] rest
+  ;;
+
+  (** Tokenize a list of [chars] into a list of tokens *)
   let tokenize chars =
     let rec aux acc = function
       | 'm' :: 'u' :: 'l' :: rest -> aux (Mul :: acc) rest
@@ -23,16 +35,8 @@ module Lexer = struct
       | ',' :: rest -> aux (Comma :: acc) rest
       (* number matched, match rest of the number*)
       | c :: rest when Char.is_digit c -> begin
-        let rec match_number num_acc = function
-          | d :: rest when Char.is_digit d && List.length num_acc < 3 ->
-            match_number (d :: num_acc) rest
-          | remaining ->
-            let num = num_acc |> List.rev |> String.of_list |> int_of_string in
-            Num num :: acc, remaining
-        in
-
-        let new_acc, remaining = match_number [ c ] rest in
-        aux new_acc remaining
+        let num, remaining = match_number c rest in
+        aux (Num num :: acc) remaining
       end
       | _ :: rest -> aux (Invalid :: acc) rest
       | [] -> acc
@@ -62,6 +66,12 @@ module Parser = struct
 
   (** Evaluate a Mul([x],[y]) *)
   let eval (x, y) = x * y
+
+  (** Execute and sum all Mul(x,y) operations found in a list of [tokens].
+      Optionally considers conditionals when [enable_conditionals] is true *)
+  let execute ?(enable_conditionals = false) tokens =
+    tokens |> parse ~enable_conditionals |> List.map ~f:eval |> List.fold ~init:0 ~f:( + )
+  ;;
 end
 
 module M = struct
@@ -72,21 +82,11 @@ module M = struct
   let parse inputs = Lexer.tokenize (String.to_list inputs)
 
   (* Run part 1 with parsed inputs *)
-  let part1 tokens =
-    Parser.parse tokens
-    |> List.map ~f:Parser.eval
-    |> List.fold ~init:0 ~f:( + )
-    |> string_of_int
-    |> print_endline
-  ;;
+  let part1 tokens = tokens |> Parser.execute |> string_of_int |> print_endline
 
   (* Run part 2 with parsed inputs *)
   let part2 tokens =
-    Parser.parse tokens ~enable_conditionals:true
-    |> List.map ~f:Parser.eval
-    |> List.fold ~init:0 ~f:( + )
-    |> string_of_int
-    |> print_endline
+    tokens |> Parser.execute ~enable_conditionals:true |> string_of_int |> print_endline
   ;;
 end
 

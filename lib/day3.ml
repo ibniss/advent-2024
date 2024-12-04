@@ -14,8 +14,6 @@ module Lexer = struct
   [@@deriving show]
 
   let tokenize chars =
-    (* alias <= for chars to << so we can use <= for ints *)
-    let ( << ) = Char.( <= ) in
     let rec aux acc = function
       | 'm' :: 'u' :: 'l' :: rest -> aux (Mul :: acc) rest
       | 'd' :: 'o' :: '(' :: ')' :: rest -> aux (Do :: acc) rest
@@ -24,9 +22,9 @@ module Lexer = struct
       | ')' :: rest -> aux (RParen :: acc) rest
       | ',' :: rest -> aux (Comma :: acc) rest
       (* number matched, match rest of the number*)
-      | c :: rest when '0' << c && c << '9' -> begin
+      | c :: rest when Char.is_digit c -> begin
         let rec match_number num_acc = function
-          | d :: rest when '0' << d && d << '9' && List.length num_acc < 3 ->
+          | d :: rest when Char.is_digit d && List.length num_acc < 3 ->
             match_number (d :: num_acc) rest
           | remaining ->
             let num = num_acc |> List.rev |> String.of_list |> int_of_string in
@@ -51,20 +49,15 @@ module Parser = struct
   (** parse [tokens] into a list of found Mul operations *)
   let parse ?(enable_conditionals = false) tokens =
     let open Lexer in
-    let mul_enabled = ref true in
-    let rec aux acc = function
+    let rec aux acc mul_enabled = function
       | Mul :: LParen :: Num x :: Comma :: Num y :: RParen :: rest ->
-        if !mul_enabled then aux ((x, y) :: acc) rest else aux acc rest
-      | Do :: rest when enable_conditionals ->
-        mul_enabled := true;
-        aux acc rest
-      | Dont :: rest when enable_conditionals ->
-        mul_enabled := false;
-        aux acc rest
-      | _ :: rest -> aux acc rest
+        if mul_enabled then aux ((x, y) :: acc) mul_enabled rest else aux acc mul_enabled rest
+      | Do :: rest when enable_conditionals -> aux acc true rest
+      | Dont :: rest when enable_conditionals -> aux acc false rest
+      | _ :: rest -> aux acc mul_enabled rest
       | [] -> acc
     in
-    aux [] tokens
+    aux [] true tokens
   ;;
 
   (** Evaluate a Mul([x],[y]) *)
@@ -129,4 +122,3 @@ let%expect_test "part 2" =
   run example_two ~only_part2:true;
   [%expect {| 48 |}]
 ;;
-

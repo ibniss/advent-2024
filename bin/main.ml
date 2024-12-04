@@ -34,7 +34,8 @@ let command =
     begin
       let%map_open day = anon ("day" %: string)
       and only_part1 = flag "-1" no_arg ~doc:"Run only part 1"
-      and only_part2 = flag "-2" no_arg ~doc:"Run only part 2" in
+      and only_part2 = flag "-2" no_arg ~doc:"Run only part 2"
+      and time = flag "-t" no_arg ~doc:"Time the parts" in
 
       fun () ->
         let inputs =
@@ -49,7 +50,7 @@ let command =
           | Error msg -> failwith msg
         in
 
-        Day.run inputs ~only_part1 ~only_part2
+        Day.run inputs ~only_part1 ~only_part2 ~enable_time:time
     end
 ;;
 

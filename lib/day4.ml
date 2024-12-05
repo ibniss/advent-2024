@@ -10,6 +10,7 @@ module Xmas = struct
   (* list of positions where X (starting a valid xmas) was found *)
   type t = pos list
 
+  (** Legal XMAS transforms - vertical, horizontal, diagonal in both directions *)
   let legal_transforms =
     [ (* xmas *)
       [ { x = 0; y = 0 }; { x = 1; y = 0 }; { x = 2; y = 0 }; { x = 3; y = 0 } ]
@@ -44,15 +45,15 @@ module Xmas = struct
       else tokens.(new_y).(new_x))
   ;;
 
-  (* Whether a token list contains a valid XMAS word (or reversed SAMX) *)
+  (** Whether a token list contains a valid XMAS word (or reversed SAMX) *)
   let is_valid = function
     | [ 'X'; 'M'; 'A'; 'S' ] -> true
     | [ 'S'; 'A'; 'M'; 'X' ] -> true
     | _ -> false
   ;;
 
-  (* Check whether relatively to [position], how many valid words in [tokens] when applying any of
-     the transforms *)
+  (** Check whether relatively to [position], how many valid words in [tokens] when applying any of
+      the transforms *)
   let count_words tokens position =
     List.count legal_transforms ~f:(fun tr ->
       (*print_endline "trying transform:";*)
@@ -62,6 +63,31 @@ module Xmas = struct
       (*print_endline ("valid:" ^ string_of_bool valid);*)
       valid)
   ;;
+
+  (* transforms to get the 4 MAS positions:
+    - top-left
+    - bottom-right
+    - top-right
+    - bottom-left
+    *)
+  let mas_transforms =
+    [
+      { x = -1; y = 1 } ;
+      { x = 1; y = -1 };
+      { x = 1; y = 1 };
+      { x = -1; y = -1 };
+      ]
+  ;;
+
+  (** Check whether relatively to [position], there is a valid MAS cross around it in [tokens] *)
+  let has_mas tokens position =
+    let chars = get_word tokens mas_transforms position in
+    match chars with
+    | ['M'; 'S' ; 'M' ; 'S'] -> true
+    | ['M'; 'S' ; 'S' ; 'M'] -> true
+    | ['S'; 'M' ; 'S' ; 'M'] -> true
+    | ['S'; 'M' ; 'M' ; 'S'] -> true
+    | _ -> false
 end
 
 module M = struct
@@ -99,7 +125,26 @@ module M = struct
   ;;
 
   (* Run part 2 with parsed inputs *)
-  let part2 _ = ()
+  let part2 (tokens : t) =
+    let height = Array.length tokens in
+    let width = Array.length tokens.(0) in
+
+    let counter = ref 0 in
+
+    for y = 0 to height - 1 do
+      for x = 0 to width - 1 do
+        let elem = tokens.(y).(x) in
+
+        (*Printf.printf "access %d %d %c\n" y x elem;*)
+        if Char.equal elem 'A' &&  Xmas.has_mas tokens { x; y }
+        then begin
+          counter := !counter + 1
+        end
+      done
+    done;
+
+    print_endline @@ string_of_int !counter
+  ;;
 end
 
 include M
@@ -123,4 +168,22 @@ MXMXAXMASX|}
 let%expect_test "part 1 example" =
   run example ~only_part1:true;
   [%expect {| 18 |}]
+;;
+
+let example_2 =
+  {|.M.S......
+..A..MSMS.
+.M.S.MAA..
+..A.ASMSM.
+.M.S.M....
+..........
+S.S.S.S.S.
+.A.A.A.A..
+M.M.M.M.M.
+..........|}
+;;
+
+let%expect_test "part 2 example" =
+  run example_2 ~only_part2:true;
+  [%expect {| 9 |}]
 ;;

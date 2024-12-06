@@ -22,16 +22,13 @@ module Order = struct
   let validate inputs order =
     let rec aux acc = function
       | hd :: tl -> begin
-        (*Printf.printf "Verifying %d\n" hd;*)
         match Map.find order hd with
         (* numbers which MUST come after the [hd] *)
         | Some afters -> begin
           (* use find to find first after which we already encountered *)
           match List.find afters ~f:(fun el -> List.mem acc el ~equal:Int.equal) with
           (* found, rule violated *)
-          | Some _ ->
-            (*Printf.printf "Violated because number: %d\n" el;*)
-            false
+          | Some _ -> false
           (* not found, recurse *)
           | None -> aux (hd :: acc) tl
         end
@@ -44,40 +41,44 @@ module Order = struct
   ;;
 
   let rec graph_find_aux (order : t) start needle visited =
+    (* break if we find a cycle *)
     if List.mem visited start ~equal:Int.equal
     then false
     else (
-      (*Printf.printf "At node: %d\nNeighbours:" start;*)
       let neighbours = Map.find order start |> Option.value ~default:[] in
-      (*print_list neighbours;*)
       List.find neighbours ~f:(fun n ->
         if n = needle then true else graph_find_aux order n needle (n :: visited))
       |> Option.is_some)
   ;;
 
   (** Find [needle] in [order] graph starting from the [start] *)
-  let graph_find order start needle =
-    match graph_find_aux order start needle [] with
-    | true ->
-      (*Printf.printf "Found %d from %d\n" needle start;*)
-      true
-    | false ->
-      (*Printf.printf "Didn't find %d from %d\n" needle start;*)
-      false
-  ;;
+  let graph_find order start needle = graph_find_aux order start needle []
 
   let sort inputs ~order =
     List.sort inputs ~compare:(fun a b ->
-      (*Printf.printf "\n\nCompare %d %d\n" a b;*)
       if graph_find order a b then -1 else if graph_find order b a then 1 else 0)
   ;;
+end
+
+module Update = struct
+  (** page numbers of the update *)
+  type t = int list
+
+  (** Get middle item of the [update] *)
+  let get_middle (update : t) =
+    let len = List.length update in
+    let middle_idx = len / 2 in
+    List.nth_exn update middle_idx
+  ;;
+
+  let score updates = List.fold updates ~init:0 ~f:(fun acc u -> acc + get_middle u)
 end
 
 module M = struct
   (* Type to parse the input into *)
   type t =
     { order : Order.t
-    ; pages : int list list
+    ; pages : Update.t list
     }
 
   (* Parse the input to type t, invoked for both parts *)
@@ -112,44 +113,17 @@ module M = struct
 
   (* Run part 1 with parsed inputs *)
   let part1 { order; pages } =
-    let valid_orders =
-      List.filter pages ~f:(fun page ->
-        (*print_endline @@ String.concat ~sep:"," (List.map page ~f:string_of_int);*)
-        Order.validate page order)
-    in
-    let sum =
-      List.fold valid_orders ~init:0 ~f:(fun acc page ->
-        let len = List.length page in
-        let middle_idx = len / 2 in
-        let middle_el = List.nth_exn page middle_idx in
-        acc + middle_el)
-    in
-    print_endline @@ string_of_int sum
+    let valid_orders = List.filter pages ~f:(fun page -> Order.validate page order) in
+    print_endline @@ string_of_int (Update.score valid_orders)
   ;;
 
   (* Run part 2 with parsed inputs *)
   let part2 { order; pages } =
-    (*Order.print order;*)
-
-    (*print_endline "Unsorted:";*)
-    (*print_list @@ (order |> Order.all_elements);*)
-
-    (*let total_order = order |> Order.all_elements |> Order.sort ~order in*)
-    (*print_endline "Sorted:";*)
-    (*print_list total_order;*)
-
     let invalid_orders =
       List.filter pages ~f:(fun page -> not @@ Order.validate page order)
       |> List.map ~f:(fun ord -> Order.sort ord ~order)
     in
-    let sum =
-      List.fold invalid_orders ~init:0 ~f:(fun acc page ->
-        let len = List.length page in
-        let middle_idx = len / 2 in
-        let middle_el = List.nth_exn page middle_idx in
-        acc + middle_el)
-    in
-    print_endline @@ string_of_int sum
+    print_endline @@ string_of_int (Update.score invalid_orders)
   ;;
 end
 

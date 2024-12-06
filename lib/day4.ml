@@ -47,8 +47,7 @@ module Xmas = struct
 
   (** Whether a token list contains a valid XMAS word (or reversed SAMX) *)
   let is_valid = function
-    | [ 'X'; 'M'; 'A'; 'S' ] -> true
-    | [ 'S'; 'A'; 'M'; 'X' ] -> true
+    | [ 'X'; 'M'; 'A'; 'S' ] | [ 'S'; 'A'; 'M'; 'X' ] -> true
     | _ -> false
   ;;
 
@@ -83,9 +82,9 @@ module Xmas = struct
   let has_mas tokens position =
     let chars = get_word tokens mas_transforms position in
     match chars with
-    | ['M'; 'S' ; 'M' ; 'S'] -> true
-    | ['M'; 'S' ; 'S' ; 'M'] -> true
-    | ['S'; 'M' ; 'S' ; 'M'] -> true
+    | ['M'; 'S' ; 'M' ; 'S']
+    | ['M'; 'S' ; 'S' ; 'M']
+    | ['S'; 'M' ; 'S' ; 'M']
     | ['S'; 'M' ; 'M' ; 'S'] -> true
     | _ -> false
 end

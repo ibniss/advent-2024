@@ -47,6 +47,12 @@ module Vec = struct
   let add (a, b) (a', b') = a + a', b + b'
 end
 
+let equal_paths path1 path2 =
+  List.for_alli path1 ~f:(fun idx pos1 ->
+    let pos2 = List.nth_exn path2 idx in
+    Vec.equal pos1 pos2)
+;;
+
 module PosSet = Set.Make (Vec)
 
 module Guard = struct
@@ -63,27 +69,40 @@ module Guard = struct
     (* out of bounds *)
     if next_x > max_x || next_x < 0 || next_y > max_y || next_y < 0
     then begin
-      print_endline "Guard escaped!";
       None
     end
     else begin
       match Set.mem obstacles (next_x, next_y) with
-      | true -> begin
-        Printf.printf
-          "Rotate to %c\n"
-          (guard.direction |> Direction.rotate_right |> Direction.to_symbol);
-        Some { guard with direction = Direction.rotate_right guard.direction }
-      end
-      | false -> begin
-        Printf.printf "Walk to (%d, %d)\n" next_x next_y;
-        Some { guard with position = next_x, next_y }
-      end
+      | true -> Some { guard with direction = Direction.rotate_right guard.direction }
+      | false -> Some { guard with position = next_x, next_y }
     end
+  ;;
+
+  exception LoopDetected
+
+  (** Check for loop in a given [guard]'s path, given [obstacles] and map [bounds].
+      Runs simulation for [max_iters] iterations. When we have over 8 'edges' of the path,
+      begins checking whether the last 4 are identical to past 4, i.e [a,b,d,c,a,b,c,d]. *)
+  let check_for_loop guard obstacles bounds ~max_iters =
+    let rec aux g acc iter =
+      match step g obstacles bounds with
+      | _ when iter > max_iters -> raise LoopDetected
+      | Some next_guard ->
+        (* we should have 8 positions already, start checking for loops*)
+        if iter > 9
+        then begin
+          let latest_four = List.slice acc 0 4 in
+          let prev_four = List.slice acc 5 9 in
+          if equal_paths latest_four prev_four then raise LoopDetected
+        end;
+
+        aux next_guard (next_guard.position :: acc) (iter + 1)
+      | None -> acc
+    in
+    aux guard [] 0
   ;;
 end
 
-(* keep map of (x,y) -> obstacle; guard: (x,y), directioni, function to walk forward, function to
-   check obstacle and walk; walk and keep track of (x,y) pairs; then unique it*)
 module M = struct
   (* Type to parse the input into *)
   type t =
@@ -109,7 +128,6 @@ module M = struct
     match
       split_lines
       |> List.foldi ~init:{ obstacles = PosSet.empty; guard = None } ~f:(fun col acc line ->
-        print_endline line;
         let { obstacles = line_obstacles; guard = line_guard } =
           String.to_list line
           |> List.foldi ~init:{ obstacles = PosSet.empty; guard = None } ~f:(fun row acc' ch ->
@@ -132,9 +150,6 @@ module M = struct
 
   (* Run part 1 with parsed inputs *)
   let part1 ({ guard; obstacles; bounds } : t) =
-    print_endline @@ Guard.show guard;
-    print_obstacles obstacles;
-
     let rec aux g acc =
       match Guard.step g obstacles bounds with
       | Some next_guard -> aux next_guard (next_guard.position :: acc)
@@ -146,7 +161,58 @@ module M = struct
   ;;
 
   (* Run part 2 with parsed inputs *)
-  let part2 _ = ()
+  let part2 ({ guard; obstacles; bounds } : t) =
+    let rec aux g acc =
+      match Guard.step g obstacles bounds with
+      | Some next_guard -> aux next_guard (next_guard.position :: acc)
+      | None -> acc
+    in
+
+    (* all positions where guard originally went through *)
+    let original_path = aux guard [ guard.position ] |> PosSet.of_list |> Set.to_list in
+
+    let count_valid_obstacles original_path guard obstacles bounds ~domain_mgr =
+      (* Split work across all cores *)
+      let num_workers = Domain.recommended_domain_count () in
+      let chunk_size = List.length original_path / num_workers in
+      let chunks = List.chunks_of original_path ~length:chunk_size in
+
+      let counter = Atomic.make 0 in
+
+      let fibers =
+        List.mapi chunks ~f:(fun _chunk_index chunk ->
+          (* Create a fiber/thunk for each chunk that... *)
+          let thunk () =
+            (* Defines the logic, process the chunk and track result in atomic counter *)
+            let process () =
+              List.iteri chunk ~f:(fun _idx position ->
+                let new_obstacles = Set.add obstacles position in
+                try ignore @@ Guard.check_for_loop guard new_obstacles bounds ~max_iters:7000 with
+                | Guard.LoopDetected -> Atomic.incr counter)
+            in
+            (* Submits the processing logic to domain mgr to execute in one of the cores *)
+            Eio.Domain_manager.run domain_mgr process
+          in
+          thunk)
+      in
+      Eio.Fiber.all fibers;
+
+      Atomic.get counter
+    in
+
+    (* Run an EIO loop for multi-core threading *)
+    Eio_main.run
+    @@ fun env ->
+    let valid_count =
+      count_valid_obstacles
+        ~domain_mgr:(Eio.Stdenv.domain_mgr env)
+        original_path
+        guard
+        obstacles
+        bounds
+    in
+    print_endline @@ string_of_int valid_count
+  ;;
 end
 
 include M
@@ -167,7 +233,12 @@ let example =
 ;;
 
 (* Expect test for example input *)
-let%expect_test _ =
+let%expect_test "part 1" =
   run example ~only_part1:true;
   [%expect {| 41 |}]
+;;
+
+let%expect_test "part 2" =
+  run example ~only_part2:true;
+  [%expect {| 6 |}]
 ;;

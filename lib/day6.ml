@@ -180,12 +180,12 @@ module M = struct
       let counter = Atomic.make 0 in
 
       let fibers =
-        List.mapi chunks ~f:(fun _chunk_index chunk ->
+        List.map chunks ~f:(fun chunk ->
           (* Create a fiber/thunk for each chunk that... *)
           let thunk () =
             (* Defines the logic, process the chunk and track result in atomic counter *)
             let process () =
-              List.iteri chunk ~f:(fun _idx position ->
+              List.iter chunk ~f:(fun position ->
                 let new_obstacles = Set.add obstacles position in
                 try ignore @@ Guard.check_for_loop guard new_obstacles bounds ~max_iters:7000 with
                 | Guard.LoopDetected -> Atomic.incr counter)

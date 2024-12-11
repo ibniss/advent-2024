@@ -1,6 +1,7 @@
 open Core
 
 module Equation = struct
+  (** Check if the sequence of [inputs] matches the [expected] result, if we apply any combination of * or + *)
   let try_match expected inputs =
     let rec aux = function
       | a :: b :: rest ->
@@ -8,6 +9,21 @@ module Equation = struct
         let add_result = a + b in
 
         aux (mult_result :: rest) || aux (add_result :: rest)
+      | [ result ] -> result = expected
+      | [] -> failwith "Should not reduce to empty list?"
+    in
+    aux inputs
+  ;;
+
+  (** Check if the sequence of [inputs] matches the [expected] result, if we apply any combination of *, || (concat) or + *)
+  let try_match_2 expected inputs =
+    let rec aux = function
+      | a :: b :: rest ->
+        let mult_result = a * b in
+        let add_result = a + b in
+        let concat_result = String.concat [ string_of_int a; string_of_int b ] |> int_of_string in
+
+        aux (mult_result :: rest) || aux (add_result :: rest) || aux (concat_result :: rest)
       | [ result ] -> result = expected
       | [] -> failwith "Should not reduce to empty list?"
     in
@@ -48,7 +64,14 @@ module M = struct
   ;;
 
   (* Run part 2 with parsed inputs *)
-  let part2 _ = ()
+  let part2 inputs =
+    inputs
+    |> List.filter ~f:(fun { result; sequence } -> Equation.try_match_2 result sequence)
+    |> List.map ~f:(fun { result; _ } -> result)
+    |> List.fold ~init:0 ~f:( + )
+    |> string_of_int
+    |> print_endline
+  ;;
 end
 
 include M
@@ -68,7 +91,12 @@ let example =
 ;;
 
 (* Expect test for example input *)
-let%expect_test _ =
-  run example;
+let%expect_test "part 1" =
+  run example ~only_part1:true;
   [%expect {| 3749 |}]
+;;
+
+let%expect_test "part 1" =
+  run example ~only_part2:true;
+  [%expect {| 11387 |}]
 ;;

@@ -15,13 +15,19 @@ module Equation = struct
     aux inputs
   ;;
 
+  (** Concatenate two numbers [a] and [b] *)
+  let concat_numbers a b =
+    let b_digits = Float.log10 @@ float_of_int b |> int_of_float in
+    (a * Int.pow 10 b_digits) + b
+  ;;
+
   (** Check if the sequence of [inputs] matches the [expected] result, if we apply any combination of *, || (concat) or + *)
   let try_match_2 expected inputs =
     let rec aux = function
       | a :: b :: rest ->
         let mult_result = a * b in
         let add_result = a + b in
-        let concat_result = String.concat [ string_of_int a; string_of_int b ] |> int_of_string in
+        let concat_result = concat_numbers a b in
 
         aux (mult_result :: rest) || aux (add_result :: rest) || aux (concat_result :: rest)
       | [ result ] -> result = expected

@@ -18,7 +18,7 @@ module Equation = struct
   (** Concatenate two numbers [a] and [b] *)
   let concat_numbers a b =
     let b_digits = Float.log10 @@ float_of_int b |> int_of_float in
-    (a * Int.pow 10 b_digits) + b
+    (a * Int.pow 10 (b_digits + 1)) + b
   ;;
 
   (** Check if the sequence of [inputs] matches the [expected] result, if we apply any combination of *, || (concat) or + *)
@@ -102,7 +102,7 @@ let%expect_test "part 1" =
   [%expect {| 3749 |}]
 ;;
 
-let%expect_test "part 1" =
+let%expect_test "part 2" =
   run example ~only_part2:true;
   [%expect {| 11387 |}]
 ;;

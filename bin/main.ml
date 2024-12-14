@@ -20,6 +20,7 @@ let days =
     ; "5", (module Day5)
     ; "6", (module Day6)
     ; "7", (module Day7)
+    ; "8", (module Day8)
     ]
 ;;
 

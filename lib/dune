@@ -2,6 +2,6 @@
  (name aoc)
  (libraries core eio eio_main)
  (preprocess
-   (pps ppx_expect ppx_deriving.show ppx_deriving.ord ppx_sexp_conv ppx_compare))
+   (pps ppx_expect ppx_let ppx_deriving.show ppx_deriving.ord ppx_sexp_conv ppx_compare))
  (inline_tests)
  )

@@ -11,8 +11,6 @@ module Antenna = struct
   let equal a b = Char.equal a.freq b.freq && Vec.equal a.pos b.pos
 end
 
-type antenna_pair = Antenna.t * Antenna.t
-
 module M = struct
   open Antenna
 
@@ -50,6 +48,25 @@ module M = struct
     pos.x >= 0 && pos.x <= bounds.x && pos.y >= 0 && pos.y <= bounds.y
   ;;
 
+  let find_antinodes a b bounds =
+    let diff = Vec.sub b.pos a.pos in
+
+    let rec aux_add latest acc =
+      let next = Vec.add diff latest in
+      if in_bounds next bounds then aux_add next (next :: acc) else acc
+    in
+
+    let rec aux_sub latest acc =
+      let next = Vec.sub latest diff in
+      if in_bounds next bounds then aux_sub next (next :: acc) else acc
+    in
+
+    (* first find all nodes forward *)
+    let forward_nodes = aux_add b.pos [] in
+    (* then add backward nodes to them *)
+    aux_sub a.pos forward_nodes
+  ;;
+
   (* Run part 1 with parsed inputs *)
   let part1 { antennas; bounds } =
     let positions = Dynarray.create () in
@@ -59,38 +76,26 @@ module M = struct
       List.sort_and_group antennas ~compare:(fun a b -> Char.compare a.freq b.freq)
     in
 
-    (*List.iter antennas_by_freq ~f:(fun group ->*)
-    (*  print_endline "Group:";*)
-    (*  List.iter group ~f:(fun ant -> print_endline @@ Antenna.show ant));*)
-
     (* 2. for each freq, pairwise consider the antennas and add a new antinode location to the
        list *)
     List.iter antennas_by_freq ~f:(fun group ->
       List.cartesian_product group group
       |> List.filter ~f:(fun (a, b) -> not (Vec.equal a.pos b.pos))
       |> List.iter ~f:(fun (a, b) ->
-        (*print_endline "Considering antennas:";*)
-        (*print_endline @@ Antenna.show a;*)
-        (*print_endline @@ Antenna.show b;*)
-
         (* difference vector of positions *)
         let diff = Vec.sub b.pos a.pos in
-        (*Printf.printf "Diff: %s\n" (Vec.show diff);*)
+
         (* compute positions on either side *)
         let pos1 = Vec.add b.pos diff in
         let pos2 = Vec.sub a.pos diff in
 
-        (*Printf.printf "Pos1: %s\n" (Vec.show pos1);*)
-        (*Printf.printf "Pos2: %s\n" (Vec.show pos2);*)
         if in_bounds pos1 bounds
         then begin
-          (*print_endline "1 valid";*)
           Dynarray.add_last positions pos1
         end;
 
         if in_bounds pos2 bounds
         then begin
-          (*print_endline "2 valid";*)
           Dynarray.add_last positions pos2
         end));
 
@@ -104,7 +109,35 @@ module M = struct
   ;;
 
   (* Run part 2 with parsed inputs *)
-  let part2 _ = ()
+  (* same as above, but repeat add/sub until we run out of board, add all valid*)
+  let part2 { antennas; bounds } =
+    let positions = Dynarray.create () in
+
+    (* 1. group by antenna freq *)
+    let antennas_by_freq =
+      List.sort_and_group antennas ~compare:(fun a b -> Char.compare a.freq b.freq)
+    in
+
+    (* 2. for each freq, pairwise consider the antennas and add a new antinode location to the
+       list *)
+    List.iter antennas_by_freq ~f:(fun group ->
+      List.cartesian_product group group
+      |> List.filter ~f:(fun (a, b) -> not (Vec.equal a.pos b.pos))
+      |> List.iter ~f:(fun (a, b) ->
+        let antinodes = find_antinodes a b bounds in
+        Dynarray.append_list positions antinodes));
+
+    (* add positions of each antenna since they also act as antinodes *)
+    Dynarray.append_list positions (antennas |> List.map ~f:(fun a -> a.pos));
+
+    (* filter out unique values*)
+    positions
+    |> Dynarray.to_list
+    |> List.stable_dedup ~compare:Vec.compare
+    |> List.length
+    |> string_of_int
+    |> print_endline
+  ;;
 end
 
 include M
@@ -126,8 +159,31 @@ let example =
    ............"
 ;;
 
+let example_small =
+  "T....#....\n\
+   ...T......\n\
+   .T....#...\n\
+   .........#\n\
+   ..#.......\n\
+   ..........\n\
+   ...#......\n\
+   ..........\n\
+   ....#.....\n\
+   .........."
+;;
+
 (* Expect test for example input *)
 let%expect_test "part 1" =
   run example ~only_part1:true;
   [%expect {| 14 |}]
+;;
+
+let%expect_test "part 2 small" =
+  run example_small ~only_part2:true;
+  [%expect {| 9 |}]
+;;
+
+let%expect_test "part 2 original" =
+  run example ~only_part2:true;
+  [%expect {| 34 |}]
 ;;

@@ -11,6 +11,7 @@ depends: [
   "core_unix"
   "fmt"
   "eio"
+  "eio_main"
   "ppx_deriving"
   "odoc" {with-doc}
 ]

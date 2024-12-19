@@ -20,6 +20,7 @@
    core_unix
    fmt
    eio
+   eio_main
    ppx_deriving))
 
 ; See the complete stanza docs at https://dune.readthedocs.io/en/stable/reference/dune-project/index.html

@@ -8,22 +8,12 @@ Repo setup inspired by https://github.com/fangyi-zhou/advent-of-code-ocaml-start
 
 ## Setup
 
+Use `dune-preview`
+
 Install dependencies
 
 ```bash
-opam switch create . 5.2.1
-
-# might not be needed, should pick up switch from local folder
-eval $(opam env)
-
-# install dependencies
-opam install . --deps-only
-```
-
-For LSP to work (tested in neovim):
-
-```bash
-opam install ocaml-lsp-server
+dune pkg lock
 ```
 
 # Running solutions

@@ -22,6 +22,7 @@ let days =
     ; "7", (module Day7)
     ; "8", (module Day8)
     ; "9", (module Day9)
+    ; "11", (module Day11)
     ]
 ;;
 
